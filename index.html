@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expenses Tracker</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: #f4f5fb;
+      color: #1f2933;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .app {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+      max-width: 480px;
+      width: 100%;
+      padding: 24px 24px 20px;
+    }
+
+    .app-header {
+      margin-bottom: 20px;
+    }
+
+    .app-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .app-subtitle {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    form {
+      margin-bottom: 20px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #4b5563;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.18);
+    }
+
+    button[type="submit"] {
+      margin-top: 6px;
+      border-radius: 8px;
+      border: none;
+      padding: 10px 14px;
+      background: #6366f1;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+
+    button[type="submit"]:hover {
+      background: #4f46e5;
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(1px);
+    }
+
+    button[type="submit"]:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .status {
+      min-height: 18px;
+      font-size: 0.8rem;
+      margin-bottom: 8px;
+    }
+
+    .status--error {
+      color: #dc2626;
+    }
+
+    .status--success {
+      color: #16a34a;
+    }
+
+    .expenses-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+
+    .expenses-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .expenses-count {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .expenses-list {
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .expense-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      font-size: 0.9rem;
+    }
+
+    .expense-item + .expense-item {
+      margin-top: 6px;
+    }
+
+    .expense-main {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .expense-description {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .expense-meta {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .expense-amount {
+      font-weight: 700;
+      font-feature-settings: "tnum" 1;
+      font-variant-numeric: tabular-nums;
+      margin-left: 10px;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      font-size: 0.85rem;
+      color: #6b7280;
+      text-align: center;
+      padding: 10px 4px;
+    }
+
+    .loading {
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-align: right;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1 class="app-title">Expenses</h1>
+      <p class="app-subtitle">Add an expense and see it appear below in real time.</p>
+    </header>
+
+    <form id="expense-form">
+      <div class="field-group">
+        <label for="description">Description</label>
+        <input
+          type="text"
+          id="description"
+          name="description"
+          placeholder="e.g. Coffee"
+          required
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="amount">Amount</label>
+        <input
+          type="number"
+          id="amount"
+          name="amount"
+          placeholder="e.g. 3.50"
+          step="0.01"
+          min="0"
+          required
+        />
+      </div>
+
+      <button type="submit" id="submit-btn">Add expense</button>
+    </form>
+
+    <div id="status" class="status"></div>
+
+    <div class="expenses-header">
+      <span class="expenses-title">Expenses list</span>
+      <span class="expenses-count" id="expenses-count"></span>
+    </div>
+
+    <div class="expenses-list" id="expenses-list">
+      <p class="empty-state">Loading expenses…</p>
+    </div>
+
+    <div class="loading" id="loading-indicator" style="display: none;">
+      Syncing with server…
+    </div>
+  </div>
+
+  <script>
+    // Adjust here if your API is on a different origin
+    const API_URL = "/api/expenses";
+
+    const form = document.getElementById("expense-form");
+    const descriptionInput = document.getElementById("description");
+    const amountInput = document.getElementById("amount");
+    const submitBtn = document.getElementById("submit-btn");
+    const statusEl = document.getElementById("status");
+    const expensesListEl = document.getElementById("expenses-list");
+    const expensesCountEl = document.getElementById("expenses-count");
+    const loadingIndicatorEl = document.getElementById("loading-indicator");
+
+    let expenses = [];
+
+    function setStatus(message, type) {
+      statusEl.textContent = message || "";
+      statusEl.className = "status";
+      if (type === "error") {
+        statusEl.classList.add("status--error");
+      } else if (type === "success") {
+        statusEl.classList.add("status--success");
+      }
+    }
+
+    function setLoading(loading) {
+      loadingIndicatorEl.style.display = loading ? "block" : "none";
+      submitBtn.disabled = loading;
+    }
+
+    function renderExpenses() {
+      expensesListEl.innerHTML = "";
+
+      if (!expenses || expenses.length === 0) {
+        expensesListEl.innerHTML =
+          '<p class="empty-state">No expenses yet. Add one above!</p>';
+        expensesCountEl.textContent = "0 items";
+        return;
+      }
+
+      expenses.forEach(function (expense) {
+        const item = document.createElement("div");
+        item.className = "expense-item";
+
+        const main = document.createElement("div");
+        main.className = "expense-main";
+
+        const description = document.createElement("span");
+        description.className = "expense-description";
+        description.textContent = expense.description || "(no description)";
+
+        const meta = document.createElement("span");
+        meta.className = "expense-meta";
+
+        // Try to show date if available
+        if (expense.createdAt) {
+          const date = new Date(expense.createdAt);
+          if (!isNaN(date.getTime())) {
+            meta.textContent = "Added on " + date.toLocaleString();
+          } else {
+            meta.textContent = "Added";
+          }
+        } else {
+          meta.textContent = "Added";
+        }
+
+        main.appendChild(description);
+        main.appendChild(meta);
+
+        const amount = document.createElement("span");
+        amount.className = "expense-amount";
+
+        var amt = Number(expense.amount);
+        var currency = expense.currency || "EUR";
+        if (!isNaN(amt)) {
+          amount.textContent =
+            amt.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }) +
+            " " +
+            currency;
+        } else {
+          amount.textContent = expense.amount + " " + currency;
+        }
+
+        item.appendChild(main);
+        item.appendChild(amount);
+
+        expensesListEl.appendChild(item);
+      });
+
+      expensesCountEl.textContent =
+        expenses.length + (expenses.length === 1 ? " item" : " items");
+    }
+
+    // Fetch expenses from API (GET /api/expenses)
+    async function loadExpenses() {
+      setStatus("");
+      setLoading(true);
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "GET",
+          headers: {
+            Accept: "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load expenses (status " + response.status + ")");
+        }
+
+        const data = await response.json();
+
+        // Support both: [expense, ...] or { data: [expense, ...] }
+        if (Array.isArray(data)) {
+          expenses = data;
+        } else if (Array.isArray(data.data)) {
+          expenses = data.data;
+        } else {
+          expenses = [];
+        }
+
+        renderExpenses();
+      } catch (err) {
+        console.error(err);
+        setStatus("Error loading expenses: " + err.message, "error");
+        expensesListEl.innerHTML =
+          '<p class="empty-state">Could not load expenses.</p>';
+        expensesCountEl.textContent = "";
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Handle form submit (POST /api/expenses)
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      setStatus("");
+
+      const description = descriptionInput.value.trim();
+      const amountValue = amountInput.value.trim();
+
+      if (!description || !amountValue) {
+        setStatus("Please fill in both description and amount.", "error");
+        return;
+      }
+
+      const amount = Number(amountValue);
+      if (isNaN(amount)) {
+        setStatus("Amount must be a valid number.", "error");
+        return;
+      }
+
+      const payload = {
+        description: description,
+        amount: amount
+      };
+
+      setLoading(true);
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            "Failed to add expense (status " +
+              response.status +
+              "): " +
+              errorText
+          );
+        }
+
+        const created = await response.json();
+
+        // If API responds with wrapper { data: expense }
+        let newExpense;
+        if (created && created.data) {
+          newExpense = created.data;
+        } else {
+          newExpense = created;
+        }
+
+        // Push to local list and re-render
+        expenses.push(newExpense);
+        renderExpenses();
+
+        // Reset form
+        form.reset();
+        descriptionInput.focus();
+
+        setStatus("Expense added successfully.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("Error adding expense: " + err.message, "error");
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // Initial load
+    document.addEventListener("DOMContentLoaded", function () {
+      loadExpenses();
+    });
+  </script>
+</body>
+</html>
